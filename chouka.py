@@ -1,16 +1,12 @@
 import random
 import matplotlib.pyplot as plt
 import multiprocessing
-
-
+import numpy as np
+import time
 
 def chouka(p):
-    p_len = len(str(p))
-    n = 10 ** p_len
-    kachi = [0] * int(n*(1-p)) + [1]*int(p*n)
-    result = random.choices(kachi, k=1)
-    return result[0]
-
+    p = np.array([p, 1 - p])
+    return np.random.choice([1, 0], p=p.ravel())
 
 
 # for i in range(choukatimes): # 模拟10000次抽卡
@@ -20,7 +16,7 @@ def single_simulation(i):
     Up = 3  # 剩余概率up
     for i in range(700):
         piao += 1
-        p = p_quantu[i // 500] / 100 if i <= 500 else 1 # 抽到ssr/sp为新式神的概率
+        p = p_quantu[i // 50] / 100 if i <= 500 else 1 # 抽到ssr/sp为新式神的概率
         pssr = p_ssr + p_sp if Up <= 0 else 2.5 * (p_ssr + p_sp) # 抽到ssr/sp的概率
         if chouka(pssr) == 1: # 抽到ssr/sp
             Up -= 1
@@ -33,24 +29,20 @@ def single_simulation(i):
     return piao
 
 if __name__ == "__main__":
-    cpu = 5 # 并行数量
+    cpu = 6 # 并行数量
     # 概率
     p_ssr = 0.01
     p_sp = 0.0025
-    p_3up = 25 * (p_ssr + p_sp)
     p_quantu = [10 + 5 * i for i in range(7)] + [50, 60, 80, 100]
     times = [50 * i for i in range(11)]
-    SSR_SP = 0
 
     """
     up数值：[10, 15, 20, 25, 30, 35, 40, 50, 60, 80, 100]
     up更新抽数：[0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500]
     """
 
-    choukatimes = 10000
+    choukatimes = 1000000
     result_list = []
-
-    times = 0
 
     # 并行计算
     p = multiprocessing.Pool(cpu)
@@ -58,10 +50,10 @@ if __name__ == "__main__":
     p.close()
     p.join()
 
-    # 非并行计算
-    for i in range(choukatimes):
-        single_result = single_simulation(i)
-        result_list.append(single_result)
+    # # 非并行计算
+    # for i in range(choukatimes):
+    #     single_result = single_simulation(i)
+    #     result_list.append(single_result)
 
 
     # 写入文件
@@ -92,5 +84,7 @@ if __name__ == "__main__":
         if result_list.count(i + 1):
             count_num.append(result_list.count(i + 1))
             time_list.append(i + 1)
-    plt.scatter(time_list, count_num, s=20, c="#ff1212", marker='o')
+    # plt.scatter(time_list, count_num, s=20, c="#ff1212", marker='o')
+    plt.hist(result_list, bins=range(0,700,10), color="r", histtype="bar", rwidth=1, alpha=0.6)
+    plt.savefig('./SP.png')
     plt.show()
